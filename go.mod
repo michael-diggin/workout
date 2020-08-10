@@ -1,4 +1,4 @@
-module github.com/michael-diggin/exercise-tracker
+module github.com/michael-diggin/workout
 
 go 1.14
 
