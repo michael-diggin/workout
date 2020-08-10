@@ -2,6 +2,6 @@ package main
 
 func main() {
 	a := App{}
-	a.SetUp()
-	a.Run(":8080")
+	a.SetUp("./exercise.db")
+	a.Run(":8010")
 }
