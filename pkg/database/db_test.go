@@ -14,6 +14,7 @@ var dbService DBService
 
 func TestMain(m *testing.M) {
 	setUpDB(":memory:")
+	defer dbService.db.Close()
 	code := m.Run()
 	clearTable()
 	os.Exit(code)
@@ -41,6 +42,8 @@ func addEvent(t *testing.T) {
 	}
 	return
 }
+
+// TODO test table creation/ensure table exists function
 
 func TestEmptyTable(t *testing.T) {
 	clearTable()
