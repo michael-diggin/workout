@@ -12,7 +12,7 @@ import (
 var a App
 
 func TestMain(m *testing.M) {
-	a.SetUp("./testdata/test.db")
+	a.SetUp(":memory:")
 	ensureTableExists(a.DB)
 	code := m.Run()
 	clearTable()
