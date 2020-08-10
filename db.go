@@ -16,7 +16,7 @@ type Event struct {
 // GetEvent returns the event by given ID
 func (e *Event) GetEvent(db *sql.DB) error {
 	query := db.QueryRow(`SELECT * FROM events WHERE id=$1`, e.ID)
-	return query.Scan(&e.User, &e.Sport, &e.Title, &e.Duration)
+	return query.Scan(&e.ID, &e.User, &e.Sport, &e.Title, &e.Duration)
 }
 
 //UpdateEvent updates a given event

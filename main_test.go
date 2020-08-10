@@ -21,16 +21,14 @@ func TestMain(m *testing.M) {
 
 func clearTable() {
 	a.DB.Exec("DELETE FROM events")
-	a.DB.Exec("ALTER SEQUENCE events_id_seq RESTART WITH 1")
+	a.DB.Exec("DELETE FROM sqlite_sequence WHERE name='events';")
 }
 
 func addEvent(t *testing.T) {
-	for i := 0; i < 3; i++ {
-		_, err := a.DB.Exec(`INSERT INTO events (user, sport, title, duration) VALUES($1, $2, $3, $4)`,
-			"test event", "test run", "test title", 10)
-		if err != nil {
-			t.Errorf("Could not add event to DB: %s\n", err)
-		}
+	_, err := a.DB.Exec(`INSERT INTO events (user, sport, title, duration) VALUES($1, $2, $3, $4)`,
+		"test event", "test run", "test title", 10)
+	if err != nil {
+		t.Errorf("Could not add event to DB: %s\n", err)
 	}
 	return
 }
@@ -116,18 +114,17 @@ func TestGetEvent(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("Expected 200 response code. Got %d\n", rec.Code)
-		var m map[string]interface{}
-		json.Unmarshal(rec.Body.Bytes(), &m)
-		t.Logf("Error: %s\n", m["error"])
+	}
+	var event map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &event)
+	if event["user"] != "test event" {
+		t.Errorf("Expected 'test', got %v", event["user"])
 	}
 }
 
 func TestUpdateEvent(t *testing.T) {
-
 	clearTable()
-	a.DB.Exec("INSERT INTO events(user, sport, title, duration) VALUES($1, $2, $3, $4)",
-		"test1", "test run", "test title", 10,
-	)
+	addEvent(t)
 
 	req, _ := http.NewRequest("GET", "/event/1", nil)
 	rec := httptest.NewRecorder()
@@ -136,7 +133,7 @@ func TestUpdateEvent(t *testing.T) {
 	var originalEvent map[string]interface{}
 	json.Unmarshal(rec.Body.Bytes(), &originalEvent)
 
-	var jsonStr = []byte(`{"name":"test1 - updated name", "sport": "test run", "title": "test title", "duration": 10}`)
+	var jsonStr = []byte(`{"name":"test1-updated name", "sport": "test run", "title": "test title", "duration": 11}`)
 	req, _ = http.NewRequest("PUT", "/event/1", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -165,9 +162,7 @@ func TestUpdateEvent(t *testing.T) {
 
 func TestDeleteEvent(t *testing.T) {
 	clearTable()
-	a.DB.Exec(`INSERT INTO events(user, sport, title, duration) VALUES($1, $2, $3, $4)`,
-		"test1", "test run", "test title", 10,
-	)
+	addEvent(t)
 
 	req, _ := http.NewRequest("GET", "/event/1", nil)
 	rec := httptest.NewRecorder()

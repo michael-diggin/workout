@@ -19,11 +19,11 @@ func ensureTableExists(db *sql.DB) {
 
 const tableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user TEXT,
 	sport TEXT,
 	title TEXT,
-	duration INT
+	duration INTEGER
 )`
 
 //App struct to hold router and database
@@ -48,9 +48,9 @@ func (a *App) SetUp(dbname string) {
 func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/events", a.getEvents).Methods("GET")
 	a.Router.HandleFunc("/event", a.createEvent).Methods("POST")
-	a.Router.HandleFunc("/event/{id:[0-9]+}", a.getEvent).Methods("GET")
-	a.Router.HandleFunc("/event/{id:[0-9]+}", a.updateEvent).Methods("PUT")
-	a.Router.HandleFunc("/event/{id:[0-9]+}", a.deleteEvent).Methods("DELETE")
+	a.Router.HandleFunc("/event/{id}", a.getEvent).Methods("GET")
+	a.Router.HandleFunc("/event/{id}", a.updateEvent).Methods("PUT")
+	a.Router.HandleFunc("/event/{id}", a.deleteEvent).Methods("DELETE")
 }
 
 //Run will start the application
