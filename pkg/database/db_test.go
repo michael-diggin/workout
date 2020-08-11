@@ -13,15 +13,15 @@ import (
 var dbService DBService
 
 func TestMain(m *testing.M) {
-	setUpDB(":memory:")
+	setUpDB()
 	defer dbService.db.Close()
 	code := m.Run()
 	clearTable()
 	os.Exit(code)
 }
 
-func setUpDB(dbname string) {
-	db, err := sql.Open("sqlite3", dbname)
+func setUpDB() {
+	db, err := Open(":memory:")
 	if err != nil {
 		log.Fatalf("Could not open databse: %s\n", err)
 	}

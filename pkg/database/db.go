@@ -18,6 +18,12 @@ func NewDBService(db *sql.DB) *DBService {
 	}
 }
 
+// Open will return the database and connection error
+func Open(dbname string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", dbname)
+	return db, err
+}
+
 // Event returns the event by given ID
 func (s *DBService) Event(id int) (*workout.Event, error) {
 	var e workout.Event
@@ -54,7 +60,7 @@ func (s *DBService) CreateEvent(e *workout.Event) (int, error) {
 }
 
 // Events returns all events
-func (s *DBService) Events() ([]workout.Event, error) {
+func (s *DBService) Events() ([]*workout.Event, error) {
 	rows, err := s.db.Query(
 		`SELECT id, user, sport, title, duration FROM events`)
 	if err != nil {
@@ -63,10 +69,10 @@ func (s *DBService) Events() ([]workout.Event, error) {
 
 	defer rows.Close()
 
-	events := []workout.Event{}
+	var events []*workout.Event
 
 	for rows.Next() {
-		var e workout.Event
+		var e *workout.Event
 		if err := rows.Scan(&e.ID, &e.User, &e.Sport, &e.Title, &e.Duration); err != nil {
 			return nil, err
 		}
