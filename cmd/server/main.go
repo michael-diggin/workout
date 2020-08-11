@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -17,5 +18,6 @@ func main() {
 	dbService := database.NewDBService(db)
 	a := routing.App{}
 	a.SetUp(dbService)
+	fmt.Println("Running the server!")
 	a.Run(":8010")
 }

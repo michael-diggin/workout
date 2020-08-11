@@ -32,7 +32,7 @@ func (a *App) initializeRoutes() {
 
 //Run will start the application
 func (a *App) Run(addr string) {
-	log.Fatal(http.ListenAndServe(":8080", a.Router))
+	log.Fatal(http.ListenAndServe(addr, a.Router))
 }
 
 //ServeHTTP will serve and route a request

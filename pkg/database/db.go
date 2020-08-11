@@ -54,8 +54,10 @@ func (s *DBService) CreateEvent(e *workout.Event) (int, error) {
 	sqlStatement := `INSERT INTO events (user, sport, title, duration)
 	VALUES($1, $2, $3, $4)`
 	res, err := s.db.Exec(sqlStatement, e.User, e.Sport, e.Title, e.Duration)
-	id, _ := res.LastInsertId()
-	e.ID = int(id)
+	id, err := res.LastInsertId()
+	if err != nil {
+		return int(id), err
+	}
 	return int(id), err
 }
 
@@ -72,11 +74,11 @@ func (s *DBService) Events() ([]*workout.Event, error) {
 	var events []*workout.Event
 
 	for rows.Next() {
-		var e *workout.Event
+		var e workout.Event
 		if err := rows.Scan(&e.ID, &e.User, &e.Sport, &e.Title, &e.Duration); err != nil {
 			return nil, err
 		}
-		events = append(events, e)
+		events = append(events, &e)
 	}
 
 	return events, nil
