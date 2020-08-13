@@ -6,7 +6,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-EXPOSE 8080
+EXPOSE 8010
 RUN GOOS=linux go build -o workout github.com/michael-diggin/workout/server
 
 ENTRYPOINT ["./workout"]

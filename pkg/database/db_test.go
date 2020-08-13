@@ -2,40 +2,24 @@ package database
 
 import (
 	"database/sql"
-	"log"
-	"os"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/michael-diggin/workout"
 )
 
-var dbService DBService
-
-func TestMain(m *testing.M) {
-	setUpDB()
-	defer dbService.db.Close()
-	code := m.Run()
-	clearTable()
-	os.Exit(code)
-}
-
-func setUpDB() {
+func setUpDB(t *testing.T) (DBService, func(DBService)) {
 	db, err := Open(":memory:")
 	if err != nil {
-		log.Fatalf("Could not open databse: %s\n", err)
+		t.Fatalf("Could not open databse: %s\n", err)
 	}
 	EnsureTableExists(db)
-	dbService.db = db
+	dbService := NewDBService(db)
+	return *dbService, func(service DBService) { service.db.Close() }
 }
 
-func clearTable() {
-	dbService.db.Exec("DELETE FROM events")
-	dbService.db.Exec("DELETE FROM sqlite_sequence WHERE name='events';")
-}
-
-func addEvent(t *testing.T) {
-	_, err := dbService.db.Exec(`INSERT INTO events (user, sport, title, duration) VALUES($1, $2, $3, $4)`,
+func addEvent(t *testing.T, service *DBService) {
+	_, err := service.db.Exec(`INSERT INTO events (user, sport, title, duration) VALUES($1, $2, $3, $4)`,
 		"test event", "test run", "test title", 10)
 	if err != nil {
 		t.Errorf("Could not add event to DB: %s\n", err)
@@ -43,22 +27,34 @@ func addEvent(t *testing.T) {
 	return
 }
 
-// TODO test table creation/ensure table exists function
+func TestEnsureTableExists(t *testing.T) {
+	db, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("Could not open databse: %s\n", err)
+	}
+	EnsureTableExists(db)
+	_, err = db.Exec(`SELECT * FROM events`)
+	if err != nil {
+		t.Fatalf("Could not access 'events' table: %v", err)
+	}
+}
 
 func TestEmptyTable(t *testing.T) {
-	clearTable()
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
 
 	allEvents, err := dbService.Events()
 	if err != nil {
 		t.Errorf("Error getting all events: %s\n", err)
 	}
 	if len(allEvents) > 0 {
-		t.Errorf("Expected an empty array. Got %v", allEvents)
+		t.Fatalf("Expected an empty array. Got %v", allEvents)
 	}
 }
 
 func TestGetNonExistentEvent(t *testing.T) {
-	clearTable()
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
 
 	_, err := dbService.Event(1)
 	if err != sql.ErrNoRows {
@@ -67,35 +63,38 @@ func TestGetNonExistentEvent(t *testing.T) {
 }
 
 func TestCreateEvent(t *testing.T) {
-	clearTable()
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
 
 	e := workout.Event{User: "test", Sport: "test run", Title: "test title", Duration: 1}
 	id, err := dbService.CreateEvent(&e)
 	if err != nil {
-		t.Errorf("Error creating event: %s\n", err)
+		t.Fatalf("Error creating event: %s\n", err)
 	}
 
 	if id != 1 {
-		t.Errorf("Expected event ID to be '1'. Got '%v'", id)
+		t.Fatalf("Expected event ID to be '1'. Got '%v'", id)
 	}
 }
 
 func TestGetEvent(t *testing.T) {
-	clearTable()
-	addEvent(t)
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
+	addEvent(t, &dbService)
 
 	event, err := dbService.Event(1)
 	if err != nil {
 		t.Errorf("Error getting event: %s\n", err)
 	}
 	if event.User != "test event" {
-		t.Errorf("Expected 'test event', got %v", event.User)
+		t.Fatalf("Expected 'test event', got %v", event.User)
 	}
 }
 
 func TestUpdateEvent(t *testing.T) {
-	clearTable()
-	addEvent(t)
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
+	addEvent(t, &dbService)
 
 	e := workout.Event{ID: 1, User: "test-updated", Sport: "test run", Title: "test title", Duration: 11}
 
@@ -103,7 +102,7 @@ func TestUpdateEvent(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error updating event: %s\n", err)
 	}
-	// get the same event and check is has been updates
+
 	newEvent, err := dbService.Event(1)
 	if err != nil {
 		t.Errorf("Error getting updated event: %s\n", err)
@@ -119,11 +118,31 @@ func TestUpdateEvent(t *testing.T) {
 }
 
 func TestDeleteEvent(t *testing.T) {
-	clearTable()
-	addEvent(t)
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
+	addEvent(t, &dbService)
 
 	err := dbService.DeleteEvent(1)
 	if err != nil {
-		t.Errorf("Error deleting event: %s\n", err)
+		t.Fatalf("Error deleting event: %s\n", err)
+	}
+}
+
+func TestGetEvents(t *testing.T) {
+	dbService, teardown := setUpDB(t)
+	defer teardown(dbService)
+	addEvent(t, &dbService)
+	addEvent(t, &dbService) // add two events
+
+	allEvents, err := dbService.Events()
+	if err != nil {
+		t.Fatalf("Could not get all events: %v", err)
+	}
+	if len(allEvents) != 2 {
+		t.Errorf("Expected 2 events, got %v", len(allEvents))
+	}
+	e := allEvents[0]
+	if e.ID != 1 {
+		t.Fatalf("Expected event with ID 1, got %v", e.ID)
 	}
 }

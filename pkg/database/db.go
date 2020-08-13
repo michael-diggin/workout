@@ -54,6 +54,9 @@ func (s *DBService) CreateEvent(e *workout.Event) (int, error) {
 	sqlStatement := `INSERT INTO events (user, sport, title, duration)
 	VALUES($1, $2, $3, $4)`
 	res, err := s.db.Exec(sqlStatement, e.User, e.Sport, e.Title, e.Duration)
+	if err != nil {
+		return 0, err
+	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		return int(id), err
