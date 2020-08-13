@@ -78,7 +78,7 @@ func (a *App) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	var e *workout.Event
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&e); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid resquest payload")
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
