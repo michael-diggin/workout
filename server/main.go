@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/michael-diggin/workout/pkg/database"
@@ -11,9 +13,11 @@ import (
 )
 
 func main() {
-	GetLocalIP()
+	var port *string
+	port = flag.String("p", ":8010", "port for server to listen on")
+	flag.Parse()
 
-	db, err := database.Open("./exercise.db")
+	db, err := database.Open(os.Getenv("DBNAME"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -22,10 +26,11 @@ func main() {
 	a := routing.App{}
 	a.SetUp(dbService)
 	fmt.Println("Running the server!")
-	a.Run(":8010")
+	a.Run(*port)
 }
 
 // GetLocalIP returns the non loopback local IP of the host
+// Used for debugging in docker/wsl
 func GetLocalIP() {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
